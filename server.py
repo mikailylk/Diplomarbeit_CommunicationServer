@@ -7,8 +7,8 @@ import json             # for serializing, deserializing data
 import serial_asyncio   # for creating async serial connection
 import asyncio          
 import threading        
-import sys              # for exiting program with exitnumber
-import signal           # for keyboard interupts
+import sys              # for exiting program with exit number
+import signal           # for keyboard interrupts
 import config           # config for camera, ports, ...
 
 from telemetrydata import TelemetryData,TelemetryDataEncoder

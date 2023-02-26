@@ -1,5 +1,6 @@
 ###########################################
 # CONFIGURATION
+
 #WIDTH = 640
 #HEIGHT = 480
 #FRAMERATE = 25  # after 40 fps --> fov is partial (see also: 
