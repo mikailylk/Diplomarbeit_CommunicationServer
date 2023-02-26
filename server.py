@@ -2,7 +2,7 @@
 # Modified by: Mikail Yoelek
 
 # libraries
-import io
+# import io
 import picamera
 import serial
 import socket
@@ -19,21 +19,27 @@ import signal
 import telemetrydata
 from telemetrydata import TelemetryData,TelemetryDataEncoder
 
+import config
+
+import http_server
+from http_server import StreamingHttpHandler, StreamingHttpServer, StreamingWebSocket
+
 from communicationdata import CommData
 
-from os import curdir, sep
-from string import Template
+# from os import curdir, sep
+# from string import Template
 
 from threading import Thread
 from queue import Queue
 
-from time import sleep, time
-from http.server import HTTPServer, BaseHTTPRequestHandler
+# from time import sleep, time
+# from http.server import HTTPServer, BaseHTTPRequestHandler
+
 from wsgiref.simple_server import make_server
 from broadcast import BroadcastThread
 from output import StreamingOutput
 
-from ws4py.websocket import WebSocket
+# from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import (
     WSGIServer,
     WebSocketWSGIHandler,
@@ -43,121 +49,28 @@ from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
 from datetime import datetime
 
-###########################################
-# CONFIGURATION
-#WIDTH = 640
-#HEIGHT = 480
-#FRAMERATE = 25  # after 40 fps --> fov is partial (see also: 
-# https://picamera.readthedocs.io/en/release-1.13/fov.html)
+# ###########################################
+# # CONFIGURATION
+# #WIDTH = 640
+# #HEIGHT = 480
+# #FRAMERATE = 25  # after 40 fps --> fov is partial (see also: 
+# # https://picamera.readthedocs.io/en/release-1.13/fov.html)
 
-WIDTH = 1280
-HEIGHT = 720
-FRAMERATE = 25  # delay is getting bigger, when resolution and framerate is higher!!
+# WIDTH = 1280
+# HEIGHT = 720
+# FRAMERATE = 25  # delay is getting bigger, when resolution and framerate is higher!!
 
-HTTP_PORT = 8082
-SMARTPHONE_PORT = 8088
+# HTTP_PORT = 8082    # default value is 8082
+# SMARTPHONE_PORT = 8088
 
-PICO_PORT = 8086       # information for smartphone; for Raspberry Pi not relevant
-WS_PORT = 8084
-
-
-VFLIP = False
-HFLIP = False
-
-###########################################
-
-#region streaming httphandler
-class StreamingHttpHandler(BaseHTTPRequestHandler):
-    """
-    HTTP handler for serving streaming video to a web client.
-    """
-    
-    def do_HEAD(self):
-        """
-        Respond to HTTP HEAD requests.
-        """
-        self.do_GET()
+# PICO_PORT = 8086       # information for smartphone; for Raspberry Pi not relevant
+# WS_PORT = 8084      # default value is 8084
 
 
-    def do_GET(self):
-        """
-        Respond to HTTP GET requests.
-        """
-        #Serve index.html
-        if self.path == '/':
-            self.send_response(301)
-            self.send_header('Location', '/index.html')
-            self.end_headers()
-            return
-        elif self.path == '/index.html':
-            content_type = 'text/html; charset=utf-8'
-            tpl = Template(self.server.index_template)
-            content = tpl.safe_substitute(dict(
-                ADDRESS='%s:%d' % (self.request.getsockname()[0], WS_PORT)
-                ))
-        #Serve js
-        elif self.path.startswith('/js/'):
-            f = open(curdir + sep + self.path)
-            
-            self.send_response(200)
-            self.send_header('Content-type',    'application/javascript')
-            self.end_headers()
-            self.wfile.write(bytes(f.read(),encoding='utf-8'))
-            f.close()
-            return
-        #Serve css
-        elif self.path.startswith('/css/'):
-            f = open(curdir + sep + self.path)
-            self.send_response(200)
-            self.send_header('Content-type',    'text/css')
-            self.end_headers()
-            self.wfile.write(bytes(f.read(),encoding='utf-8'))
-            f.close()
-            return
-            
-        else:
-            self.send_error(404, 'File not found')
-            return
-        content = content.encode('utf-8')
+# VFLIP = False
+# HFLIP = False
 
-        self.send_response(200)
-        self.send_header('Content-Type', content_type)
-        self.send_header('Content-Length', len(content))
-        self.send_header('Last-Modified', self.date_time_string(time()))
-        self.end_headers()
-        if self.command == 'GET':
-            self.wfile.write(content)
-
-
-
-class StreamingHttpServer(HTTPServer):
-    """
-    HTTP server for serving streaming video to a web client.
-    """
-    
-    def __init__(self):
-        """
-        Constructor for the StreamingHttpServer class.
-        Initializes the HTTPServer class, sets the HTTP-PORT and 
-        StreamingHttpHandler handler, and reads and saves the index.html 
-        file into the instance's index_template variable.
-        """
-        super(StreamingHttpServer, self).__init__(
-                    ('', HTTP_PORT), StreamingHttpHandler)
-        with io.open('index.html', 'r') as f:
-            self.index_template = f.read()
-
-
-class StreamingWebSocket(WebSocket):
-    def opened(self):
-        """
-        Method called when socket is opened and to print when new clients are connected.
-        """
-        print("New client connected", flush=True)
-        # you can override various WebSocket class methods
-        # to do more stuff with WebSockets other than streaming
-  
-#endregion      
+# ###########################################
 
 #region UDP_ServerProtocol
 # UDP protocol server class
@@ -349,20 +262,20 @@ async def main():
     #Camera and the configuration
     print('Initializing camera', flush=True)
     camera = picamera.PiCamera()
-    camera.framerate = FRAMERATE
-    camera.resolution = (WIDTH, HEIGHT)
-    camera.vflip = VFLIP # flips image rightside up, as needed
-    camera.hflip = HFLIP # flips image left-right, as needed
+    camera.framerate = config.FRAMERATE
+    camera.resolution = (config.WIDTH, config.HEIGHT)
+    camera.vflip = config.VFLIP # flips image rightside up, as needed
+    camera.hflip = config.HFLIP # flips image left-right, as needed
     await asyncio.sleep(1) # camera warm-up time
 
     #Custom output for h264 stream
     output = StreamingOutput()    
 
     #Websocket
-    print('Initializing websockets server on port %d' % WS_PORT, flush=True)
+    print('Initializing websockets server on port %d' % config.WS_PORT, flush=True)
     WebSocketWSGIHandler.http_version = '1.1'
     websocket_server = make_server(
-            '', WS_PORT,
+            '', config.WS_PORT,
             server_class=WSGIServer,
             handler_class=WebSocketWSGIRequestHandler,
             app=WebSocketWSGIApplication(handler_cls=StreamingWebSocket))
@@ -371,7 +284,7 @@ async def main():
     websocket_thread = Thread(target=websocket_server.serve_forever)
 
     #Http
-    print('Initializing HTTP server on port %d' % HTTP_PORT, flush=True)
+    print('Initializing HTTP server on port %d' % config.HTTP_PORT, flush=True)
     http_server = StreamingHttpServer()
     http_thread = Thread(target=http_server.serve_forever)
    
@@ -389,7 +302,7 @@ async def main():
 
     udp_transport, udp_protocol = await loop.create_datagram_endpoint(
         lambda: UDP_ServerProtocol(queue_udp),
-        local_addr=('0.0.0.0', SMARTPHONE_PORT)
+        local_addr=('0.0.0.0', config.SMARTPHONE_PORT)
     )
     
     uart_transport, uart_protocol = await serial_asyncio.create_serial_connection(
