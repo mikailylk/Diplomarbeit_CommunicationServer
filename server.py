@@ -4,157 +4,42 @@
 # libraries
 # import io
 import picamera
-import serial
-import socket
+# import serial
+# import socket
 import json
 import serial_asyncio
 import asyncio
-import struct 
-import subprocess
-import os
+# import struct 
+# import subprocess
+# import os
 import threading
 import sys
 import signal
-
-import telemetrydata
-from telemetrydata import TelemetryData,TelemetryDataEncoder
-
 import config
 
-import http_server
+from telemetrydata import TelemetryData,TelemetryDataEncoder
 from http_server import StreamingHttpHandler, StreamingHttpServer, StreamingWebSocket
-
 from communicationdata import CommData
-
-# from os import curdir, sep
-# from string import Template
+from communicationtransports import UDP_ServerProtocol, Uart_Protocol
 
 from threading import Thread
-from queue import Queue
-
-# from time import sleep, time
-# from http.server import HTTPServer, BaseHTTPRequestHandler
+# from queue import Queue
 
 from wsgiref.simple_server import make_server
+
 from broadcast import BroadcastThread
 from output import StreamingOutput
 
-# from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import (
     WSGIServer,
     WebSocketWSGIHandler,
     WebSocketWSGIRequestHandler,
 )
+
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
-from datetime import datetime
+# from datetime import datetime
 
-# ###########################################
-# # CONFIGURATION
-# #WIDTH = 640
-# #HEIGHT = 480
-# #FRAMERATE = 25  # after 40 fps --> fov is partial (see also: 
-# # https://picamera.readthedocs.io/en/release-1.13/fov.html)
-
-# WIDTH = 1280
-# HEIGHT = 720
-# FRAMERATE = 25  # delay is getting bigger, when resolution and framerate is higher!!
-
-# HTTP_PORT = 8082    # default value is 8082
-# SMARTPHONE_PORT = 8088
-
-# PICO_PORT = 8086       # information for smartphone; for Raspberry Pi not relevant
-# WS_PORT = 8084      # default value is 8084
-
-
-# VFLIP = False
-# HFLIP = False
-
-# ###########################################
-
-#region UDP_ServerProtocol
-# UDP protocol server class
-class UDP_ServerProtocol(asyncio.DatagramProtocol):
-    def __init__(self, queue):
-        """
-        Constructor for the UDP_ServerProtocol class.
-        Initializes the queue instance variable to put received data into queue.
-        """
-        self.queue = queue
-
-    def connection_made(self, transport):
-        """
-        Method called when a connection is made to the transport.
-        """
-        self.transport = transport
-
-    # get udp data from smartphone
-    def datagram_received(self, data, addr):
-        """
-        Method called when a datagram (UDP packet: JSON) is received.
-        Puts the data and address into the instance's queue.
-        """
-        # print(f'Received data from {addr}: {data.decode()}', flush=True)
-        self.queue.put_nowait((data, addr))
-#endregion
-
-#region UART Protokol 
-# UART Protokol Klasse
-class Uart_Protocol(asyncio.Protocol):
-    def __init__(self, queue, queue_handshake):
-        """
-        Constructor method for the Uart_Protocol class.
-        Initializes the queue and queue_handshake instance variables.
-        Sets the handshake instance variable to False.
-        """
-        self.queue = queue
-        self.queue_handshake = queue_handshake
-        self.handshake = False   #self.handshake = False
-
-    def connection_made(self, transport):
-        """
-        Method called when a connection is made to the transport.
-        """
-        self.transport = transport
-
-    # Receive UART data (ICU-protocol) from Teensy and put it into queue for 
-    # further processing
-    def data_received(self, data):
-        """
-        Method called when UART data is received.
-        If the handshake is already made, decodes the data and puts it into the 
-        instance's queue. If the received data is the handshake, sets the handshake 
-        instance variable to True and puts a message in the instance's queue_handshake.
-        """
-        #decoded_data = data.decode(encoding='utf-8')
-        print(f'Received data from UART port: {data}', flush=True)
-        
-        # check if handshake done 
-        if self.handshake == True:
-            # if handshake done, put received UART data into queue 
-            # receive telemetry data
-            
-            # https://docs.python.org/3/library/struct.html
-            # byte order, data type, and size of floats
-            byte_order = '<'  # little-endian
-            float_type = 'f'  # single-precision float
-            float_size = 4  # float größe
-            float_count = 8
-            
-            # decode float values
-            floats = struct.unpack(byte_order + float_type * float_count, data)
-            
-            # put telemetry data into queue to send to smartphone via JSON
-            self.queue.put_nowait(floats)
-        
-        # Check if Teensy is ready
-        # if not ready, then wait for Teensy in "process_udp_data" and 
-        # discard communication data received from smartphone
-        if data == b'\xAA' and self.handshake == False:
-            self.handshake == True
-            self.queue_handshake.put_nowait(True)
-            
-#endregion    
 
 #region Flow Control Enable Method
 async def config_rtscts():      
