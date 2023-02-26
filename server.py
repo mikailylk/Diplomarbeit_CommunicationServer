@@ -2,20 +2,14 @@
 # Modified by: Mikail Yoelek
 
 # libraries
-# import io
-import picamera
-# import serial
-# import socket
-import json
-import serial_asyncio
-import asyncio
-# import struct 
-# import subprocess
-# import os
-import threading
-import sys
-import signal
-import config
+import picamera         # for setup picamera
+import json             # for serializing, deserializing data
+import serial_asyncio   # for creating async serial connection
+import asyncio          
+import threading        
+import sys              # for exiting program with exitnumber
+import signal           # for keyboard interupts
+import config           # config for camera, ports, ...
 
 from telemetrydata import TelemetryData,TelemetryDataEncoder
 from http_server import StreamingHttpHandler, StreamingHttpServer, StreamingWebSocket
@@ -23,7 +17,6 @@ from communicationdata import CommData
 from communicationtransports import UDP_ServerProtocol, Uart_Protocol
 
 from threading import Thread
-# from queue import Queue
 
 from wsgiref.simple_server import make_server
 
@@ -37,8 +30,6 @@ from ws4py.server.wsgirefserver import (
 )
 
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
-
-# from datetime import datetime
 
 
 #region Flow Control Enable Method
@@ -74,7 +65,7 @@ async def config_rtscts():
     print(stdout, flush=True)   
 #endregion             
                        
-# converts the communication data (JSON) into ICU-protocol umwandeln (Bitoperations 
+# converts the communication data (JSON) into ICU-protocol (Bitoperations 
 # and send via UART)
 async def process_udp_data(queue_udp, queue_handshake_uart, uart_transport):
     """
@@ -84,6 +75,7 @@ async def process_udp_data(queue_udp, queue_handshake_uart, uart_transport):
     to be done and then continuously receives data from the UDP queue.
     """
     # wait for handshake and perform handshake
+    print('Waiting for Handshake', flush=True)
     wait_until_handshake = await queue_handshake_uart.get() 
     handshake = bytearray([0xAA])
     uart_transport.write(handshake)
