@@ -68,7 +68,7 @@ async def config_rtscts():
                        
 # converts the communication data (JSON) into ICU-protocol (Bitoperations 
 # and send via UART)
-async def process_udp_data(queue_udp, queue_handshake_uart, uart_transport):
+async def process_udp_data(queue_udp, queue_first_udp_connection, queue_handshake_uart, uart_transport):
     """
     This method receives and processes datagram (UDP packet: 
     JSON communication data), performs bit operations (converting into ICU-Protocol) 
@@ -77,21 +77,34 @@ async def process_udp_data(queue_udp, queue_handshake_uart, uart_transport):
     """
     # wait for handshake and perform handshake
     print('Waiting for Handshake', flush=True)
-    wait_until_handshake = await queue_handshake_uart.get() 
-    handshake = bytearray([0xAA])
-    uart_transport.write(handshake)
+    
+    # UNCOMMENT !!!!!
+    # wait_until_handshake = await queue_handshake_uart.get() 
+    # handshake = bytearray([0xAA])
+    # uart_transport.write(handshake)
 
     # TODO: find another workaround for clearing queue_udp
     
     print('Handshake done', flush=True)
     
     # # TESTING PURPOSES
-    # import struct
-    # # DELTE PREVIOUS LINE
+    import struct
+    # # DELETE PREVIOUS LINE
+    
+    first_connection = False
     
     while True:
-        # discard received ip address and send the communication data to teensy
-        data, _ = await queue_udp.get() 
+        
+        if first_connection == False:
+            # use IP-address of connected device and put it into queue to reply telemetry data
+            data, address = await queue_udp.get() 
+            queue_first_udp_connection.put_nowait(address)
+            first_connection = True
+            print('First connected device: ' + str(address), flush=True)
+        else:
+            # discard received ip address and send the communication data to teensy
+            data, _ = await queue_udp.get() 
+            
         # print(f'Processing UDP data: {data.decode()}', flush=True)
         
         # convert received communication data (json) into ICU-protocol (Bitoperations)        
@@ -101,25 +114,24 @@ async def process_udp_data(queue_udp, queue_handshake_uart, uart_transport):
         # send data to Teensy via UART
         uart_transport.write(received_CommData.to_uart_data())
         
-        # region testing loopback
-        # Create a list of the float values
-        # float_values = [12.5, 23, 25.8, 466, 54, 24, 9.856, 47.58]
+        region testing loopback
+        Create a list of the float values
+        float_values = [12.5, 23, 25.8, 466, 54, 24, 9.856, 47.58]
 
-        # # Pack the floats into a binary string
-        # packed = struct.pack('<ffffffff', *float_values)
-        # bytearray_32 = bytearray(packed)
-        # print(len(bytearray_32))
+        # Pack the floats into a binary string
+        packed = struct.pack('<ffffffff', *float_values)
+        bytearray_32 = bytearray(packed)
             
-        # uart_transport.write(packed)
-        # await asyncio.sleep(0.000001)
+        uart_transport.write(packed)
         # endregion
         
+        await asyncio.sleep(0.000001)       # check if sleep is needed
         # print('Processing UDP data done', flush=True)
     
 
 
 # sends the received telemetry data (e.g. GPS, sensors, ...) to the smartphone
-async def process_uart_recv_data(queue_udp, queue_uart, udp_transport):
+async def process_uart_recv_data(queue_first_udp_connection, queue_uart, udp_transport):
     """
     This method receives telemetry data from Teensy via UART and sends it 
     to the connected smartphone via the UDP protocol. It waits until the 
@@ -129,8 +141,10 @@ async def process_uart_recv_data(queue_udp, queue_uart, udp_transport):
     # get the ip address of the smartphone once and discard received UDP 
     # data (the first time it doesn't work, because process_udp_data also 
     # access the same queue)
-    _, addr = await queue_udp.get()   
+    addr = await queue_first_udp_connection.get()   
+    
     print('Smartphone connected', flush=True)
+    print('Ready for telemetry data.', flush=True)
     
     while True:
         data = await queue_uart.get()   # receive telemetry data from Teensy 
@@ -141,7 +155,7 @@ async def process_uart_recv_data(queue_udp, queue_uart, udp_transport):
         teldataJSON = json.dumps(teldata, cls=TelemetryDataEncoder)
         udp_transport.sendto(teldataJSON.encode('utf-8'), addr)     # send the telemetry data to 
                                                                     # smartphone via udp socket
-        print('send telemetry', flush=True)
+        # print('sent telemetry data', flush=True)
         # print('Processing UART data done', flush=True)
     
 
@@ -193,6 +207,8 @@ async def main():
     #endregion
 
     queue_udp = asyncio.Queue()
+    queue_first_udp_connection = asyncio.Queue()    # get the first connected device's
+                                                    # IP address and send telemetry data to it
     queue_uart = asyncio.Queue()
     queue_uart_handshake = asyncio.Queue()
     
@@ -210,9 +226,9 @@ async def main():
         xonxoff=False, rtscts=True
     )
     
-    task_udp = asyncio.create_task(process_udp_data(queue_udp, queue_uart_handshake, 
-                                                    uart_transport))
-    task_uart = asyncio.create_task(process_uart_recv_data(queue_udp, queue_uart, 
+    task_udp = asyncio.create_task(process_udp_data(queue_udp, queue_first_udp_connection,
+                                                    queue_uart_handshake, uart_transport))
+    task_uart = asyncio.create_task(process_uart_recv_data(queue_first_udp_connection, queue_uart, 
                                                            udp_transport))
     
     print('Starting websockets thread', flush=True)

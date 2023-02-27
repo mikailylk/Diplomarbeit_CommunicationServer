@@ -1,6 +1,5 @@
 import asyncio
 import struct 
-from queue import Queue
 
 #region UDP_ServerProtocol
 # UDP protocol server class
@@ -39,7 +38,8 @@ class Uart_Protocol(asyncio.Protocol):
         """
         self.queue = queue
         self.queue_handshake = queue_handshake
-        self.handshake = False   #self.handshake = False
+        # self.handshake = False  
+        self.handshake = True
 
     def connection_made(self, transport):
         """
