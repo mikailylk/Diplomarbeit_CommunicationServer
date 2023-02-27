@@ -10,6 +10,7 @@ import threading
 import sys              # for exiting program with exit number
 import signal           # for keyboard interrupts
 import config           # config for camera, ports, ...
+import time
 
 from telemetrydata import TelemetryData,TelemetryDataEncoder
 from http_server import StreamingHttpHandler, StreamingHttpServer, StreamingWebSocket
@@ -79,10 +80,14 @@ async def process_udp_data(queue_udp, queue_handshake_uart, uart_transport):
     wait_until_handshake = await queue_handshake_uart.get() 
     handshake = bytearray([0xAA])
     uart_transport.write(handshake)
-    
-    queue_udp.Queue.clear() #TODO: Check, if this addition works
+
+    # TODO: find another workaround for clearing queue_udp
     
     print('Handshake done', flush=True)
+    
+    # # TESTING PURPOSES
+    # import struct
+    # # DELTE PREVIOUS LINE
     
     while True:
         # discard received ip address and send the communication data to teensy
@@ -92,8 +97,22 @@ async def process_udp_data(queue_udp, queue_handshake_uart, uart_transport):
         # convert received communication data (json) into ICU-protocol (Bitoperations)        
         received_CommData = json.loads(data, object_hook=CommData.to_object)
         
+        # print(received_CommData.to_uart_data())
         # send data to Teensy via UART
         uart_transport.write(received_CommData.to_uart_data())
+        
+        # region testing loopback
+        # Create a list of the float values
+        # float_values = [12.5, 23, 25.8, 466, 54, 24, 9.856, 47.58]
+
+        # # Pack the floats into a binary string
+        # packed = struct.pack('<ffffffff', *float_values)
+        # bytearray_32 = bytearray(packed)
+        # print(len(bytearray_32))
+            
+        # uart_transport.write(packed)
+        # await asyncio.sleep(0.000001)
+        # endregion
         
         # print('Processing UDP data done', flush=True)
     
@@ -116,11 +135,13 @@ async def process_uart_recv_data(queue_udp, queue_uart, udp_transport):
     while True:
         data = await queue_uart.get()   # receive telemetry data from Teensy 
                                         # continously
+                                        
         # print(f'Processing UART data: {data}', flush=True)
-        teldata = TelemetryData(data)
+        teldata = TelemetryData(time.time(), data)
         teldataJSON = json.dumps(teldata, cls=TelemetryDataEncoder)
-        udp_transport.sendto(teldataJSON, addr)    # send the telemetry data to 
-        # smartphone via udp socket
+        udp_transport.sendto(teldataJSON.encode('utf-8'), addr)     # send the telemetry data to 
+                                                                    # smartphone via udp socket
+        print('send telemetry', flush=True)
         # print('Processing UART data done', flush=True)
     
 

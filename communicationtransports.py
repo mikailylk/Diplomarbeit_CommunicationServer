@@ -57,30 +57,44 @@ class Uart_Protocol(asyncio.Protocol):
         instance variable to True and puts a message in the instance's queue_handshake.
         """
         #decoded_data = data.decode(encoding='utf-8')
-        print(f'Received data from UART port: {data}', flush=True)
+        # print(f'Received data from UART port: {data}', flush=True)
         
         # check if handshake done 
         if self.handshake == True:
             # if handshake done, put received UART data into queue 
             # receive telemetry data
             
-            # https://docs.python.org/3/library/struct.html
-            # byte order, data type, and size of floats
-            byte_order = '<'  # little-endian
-            float_type = 'f'  # single-precision float
-            float_size = 4  # float größe
-            float_count = 8
+            # Check if the length of data is 32 bytes
+            if (len(data) == 32):
+                # region unpacking float values
+                # https://docs.python.org/3/library/struct.html
+                # byte order, data type, and size of floats
+                byte_order = '<'    # little-endian
+                float_type = 'f'    # single-precision float
+                float_size = 4      # float size
+                float_count = 8     # 8x4Bytes => 32 Bytes
+                
+                # decode float values
+                floats = struct.unpack(byte_order + float_type * float_count, data)
             
-            # decode float values
-            floats = struct.unpack(byte_order + float_type * float_count, data)
+                # put telemetry data into queue to send to smartphone via JSON
+                # print(floats, flush=True)
+                
+                self.queue.put_nowait(floats)
+                # endregion
+            else:
+                # wrong bit size
+                print('The length of telemetrydata is incorrect! Length: ', flush=True)
+                print(len(data), flush=True)
+                
+                pass
             
-            # put telemetry data into queue to send to smartphone via JSON
-            self.queue.put_nowait(floats)
-        
+
         # Check if Teensy is ready
         # if not ready, then wait for Teensy in "process_udp_data" and 
         # discard communication data received from smartphone
         if data == b'\xAA' and self.handshake == False:
-            self.handshake == True
+            self.handshake = True
             self.queue_handshake.put_nowait(True)
+            print('Handshake in UART-transport done!', flush=True)
 #endregion    

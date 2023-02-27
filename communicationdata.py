@@ -37,8 +37,11 @@ class CommData:
         rollg = int(self.RollG)
         yawg = int(self.YawG)
         
-        # werte in 2 byte array aufsplitten
-        pitch_arr = pitch.to_bytes(2, 'little')
+        # split into 2x8 Bit array
+        # TODO: should it get negative numbers?
+        pitch_arr = pitch.to_bytes(2, 'little')  
+        # pitchg_arr = pitchg.to_bytes(4, 'little', signed=True) # example for signed int (32 Bits)
+        
         roll_arr = roll.to_bytes(2, 'little')
         yaw_arr = yaw.to_bytes(2, 'little')
         power_arr = power.to_bytes(2, 'little')
@@ -47,7 +50,7 @@ class CommData:
         rollg_arr = rollg.to_bytes(2, 'little')
         yawg_arr = yawg.to_bytes(2, 'little')
         
-        # 8 Bits Powe
+        # 8 Bits Power
         byte0 = power_arr[0]
         # 5 Bits Yaw ; 3 Bits Power
         byte1 =  ((yaw_arr[0]<<3) & 0b11111000) | (power_arr[1] & 0b00000111)
@@ -120,7 +123,7 @@ if __name__ == "__main__":
     
     commdat = json.loads(message, object_hook=CommData.to_object)
     
-    serialPort = serial.Serial("/dev/ttyS0", baudrate=2000000, bytesize=8, parity="N", stopbits=1, timeout=None, xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False, inter_byte_timeout=None, exclusive=None)
+    serialPort = serial.Serial("/dev/ttyAMA", baudrate=2000000, bytesize=8, parity="N", stopbits=1, timeout=None, xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False, inter_byte_timeout=None, exclusive=None)
     
     print("Pitch: ", commdat.Pitch)
     uart_send_data = commdat.to_uart_data()
