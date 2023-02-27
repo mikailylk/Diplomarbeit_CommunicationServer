@@ -78,17 +78,16 @@ async def process_udp_data(queue_udp, queue_first_udp_connection, queue_handshak
     # wait for handshake and perform handshake
     print('Waiting for Handshake', flush=True)
     
-    # UNCOMMENT !!!!!
-    # wait_until_handshake = await queue_handshake_uart.get() 
-    # handshake = bytearray([0xAA])
-    # uart_transport.write(handshake)
+    wait_until_handshake = await queue_handshake_uart.get() 
+    handshake = bytearray([0xAA])
+    uart_transport.write(handshake)
 
     # TODO: find another workaround for clearing queue_udp
     
     print('Handshake done', flush=True)
     
     # # TESTING PURPOSES
-    import struct
+    # import struct
     # # DELETE PREVIOUS LINE
     
     first_connection = False
@@ -112,20 +111,22 @@ async def process_udp_data(queue_udp, queue_first_udp_connection, queue_handshak
         
         # print(received_CommData.to_uart_data())
         # send data to Teensy via UART
-        uart_transport.write(received_CommData.to_uart_data())
+        # uart_transport.write(received_CommData.to_uart_data())
         
-        region testing loopback
-        Create a list of the float values
-        float_values = [12.5, 23, 25.8, 466, 54, 24, 9.856, 47.58]
+        # region testing loopback
+        # Create a list of the float values
+        # float_values = [12.5, 23, 25.8, 466, 54, 24, 9.856, 47.58]
 
-        # Pack the floats into a binary string
-        packed = struct.pack('<ffffffff', *float_values)
-        bytearray_32 = bytearray(packed)
+        # # Pack the floats into a binary string
+        # packed = struct.pack('<ffffffff', *float_values)
+        # bytearray_32 = bytearray(packed)
             
-        uart_transport.write(packed)
+        # uart_transport.write(packed)
         # endregion
         
-        await asyncio.sleep(0.000001)       # check if sleep is needed
+        # IMPORTANT:
+        # await asyncio.sleep(0.000001)       # check if sleep is needed
+        
         # print('Processing UDP data done', flush=True)
     
 
@@ -155,7 +156,6 @@ async def process_uart_recv_data(queue_first_udp_connection, queue_uart, udp_tra
         teldataJSON = json.dumps(teldata, cls=TelemetryDataEncoder)
         udp_transport.sendto(teldataJSON.encode('utf-8'), addr)     # send the telemetry data to 
                                                                     # smartphone via udp socket
-        # print('sent telemetry data', flush=True)
         # print('Processing UART data done', flush=True)
     
 

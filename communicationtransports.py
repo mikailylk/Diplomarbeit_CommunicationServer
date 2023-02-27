@@ -38,8 +38,8 @@ class Uart_Protocol(asyncio.Protocol):
         """
         self.queue = queue
         self.queue_handshake = queue_handshake
-        # self.handshake = False  
-        self.handshake = True
+        self.handshake = False  
+        # self.handshake = True     # testing purposes
 
     def connection_made(self, transport):
         """
@@ -86,7 +86,6 @@ class Uart_Protocol(asyncio.Protocol):
                 # wrong bit size
                 print('The length of telemetrydata is incorrect! Length: ', flush=True)
                 print(len(data), flush=True)
-                
                 pass
             
 
