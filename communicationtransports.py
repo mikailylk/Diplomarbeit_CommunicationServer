@@ -38,8 +38,8 @@ class Uart_Protocol(asyncio.Protocol):
         """
         self.queue = queue
         self.queue_handshake = queue_handshake
-        self.handshake = False  
-        # self.handshake = True     # testing purposes
+        # self.handshake = False  
+        self.handshake = True     # testing purposes
 
     def connection_made(self, transport):
         """
