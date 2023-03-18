@@ -7,7 +7,7 @@ class UDP_ServerProtocol(asyncio.DatagramProtocol):
     def __init__(self, queue):
         """
         Constructor for the UDP_ServerProtocol class.
-        Initializes the queue instance variable to put received data into queue.
+        Initializes the queue instance variable to put received data in a queue.
         """
         self.queue = queue
 
@@ -38,8 +38,8 @@ class Uart_Protocol(asyncio.Protocol):
         """
         self.queue = queue
         self.queue_handshake = queue_handshake
-        # self.handshake = False  
-        self.handshake = True     # testing purposes
+        self.handshake = False  
+        # self.handshake = True     # testing purposes
 
     def connection_made(self, transport):
         """
@@ -52,7 +52,7 @@ class Uart_Protocol(asyncio.Protocol):
     def data_received(self, data):
         """
         Method called when UART data is received.
-        If the handshake is already made, decodes the data and puts it into the 
+        If the handshake is already done, decodes the data and puts it into the 
         instance's queue. If the received data is the handshake, sets the handshake 
         instance variable to True and puts a message in the instance's queue_handshake.
         """

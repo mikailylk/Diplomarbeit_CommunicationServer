@@ -68,7 +68,8 @@ async def config_rtscts():
                        
 # converts the communication data (JSON) into ICU-protocol (Bitoperations 
 # and send via UART)
-async def process_udp_data(queue_udp, queue_recent_udp_connection, queue_handshake_uart, uart_transport):
+async def process_udp_data(queue_udp, queue_recent_udp_connection, queue_handshake_uart, 
+                           uart_transport):
     """
     This method receives and processes datagram (UDP packet: 
     JSON communication data), performs bit operations (converting into ICU-Protocol) 
@@ -78,16 +79,16 @@ async def process_udp_data(queue_udp, queue_recent_udp_connection, queue_handsha
     # wait for handshake and perform handshake
     print('Waiting for Handshake', flush=True)
     
-    # wait_until_handshake = await queue_handshake_uart.get() 
-    # handshake = bytearray([0xAA])
-    # uart_transport.write(handshake)
+    wait_until_handshake = await queue_handshake_uart.get() 
+    handshake = bytearray([0xAA])
+    uart_transport.write(handshake)
 
     # TODO: find another workaround for clearing queue_udp
     
     print('Handshake done', flush=True)
     
     # # TESTING PURPOSES
-    import struct
+    # import struct
     # # DELETE PREVIOUS LINE
     
     recently_connected_device = None
@@ -106,19 +107,19 @@ async def process_udp_data(queue_udp, queue_recent_udp_connection, queue_handsha
         # convert received communication data (json) into ICU-protocol (Bitoperations)        
         received_CommData = json.loads(data, object_hook=CommData.to_object)
         
-        # print(received_CommData.to_uart_data())
+        print(received_CommData.to_uart_data(), flush=True)
         # send data to Teensy via UART
-        # uart_transport.write(received_CommData.to_uart_data())
+        uart_transport.write(received_CommData.to_uart_data())
         
         # region testing loopback
         # Create a list of the float values
-        float_values = [12.5, 23, 25.8, 466, 54, 24, 9.856, 47.58]
+        # float_values = [12.5, 23, 25.8, 466, 54, 24, 9.856, 47.58]
 
-        # Pack the floats into a binary string
-        packed = struct.pack('<ffffffff', *float_values)
-        bytearray_32 = bytearray(packed)
+        # # Pack the floats into a binary string
+        # packed = struct.pack('<ffffffff', *float_values)
+        # bytearray_32 = bytearray(packed)
             
-        uart_transport.write(packed)
+        # uart_transport.write(packed)
         # endregion
         
         # IMPORTANT:
@@ -136,9 +137,7 @@ async def process_uart_recv_data(queue_recent_udp_connection, queue_uart, udp_tr
     address is received of the smartphone, before it begins to receive data from the 
     UART queue.
     """
-    # get the ip address of the smartphone once and discard received UDP 
-    # data (the first time it doesn't work, because process_udp_data also 
-    # access the same queue)
+    # get the ip address of the smartphone once
     addr = await queue_recent_udp_connection.get()   
     
     print('Smartphone connected', flush=True)
