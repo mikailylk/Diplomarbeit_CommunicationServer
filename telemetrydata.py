@@ -11,7 +11,7 @@ class TelemetryData:
     
     def __init__(self, timestamp, float_values_tuple: tuple):
         """
-        Constructs a new TelemetryData instance.
+        Constructor:
         
         Attributes:
             TIMESTAMP (float): Unix timestamp of when the data was collected.

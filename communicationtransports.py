@@ -6,8 +6,8 @@ import struct
 class UDP_ServerProtocol(asyncio.DatagramProtocol):
     def __init__(self, queue):
         """
-        Constructor for the UDP_ServerProtocol class.
-        Initializes the queue instance variable to put received data in a queue.
+        Constructor:
+        Initializes the queue variable (here: a queue) to put received data into a queue.
         """
         self.queue = queue
 
@@ -21,7 +21,7 @@ class UDP_ServerProtocol(asyncio.DatagramProtocol):
     def datagram_received(self, data, addr):
         """
         Method called when a datagram (UDP packet: JSON) is received.
-        Puts the data and address into the instance's queue.
+        Puts the data and address into the given queue.
         """
         # print(f'Received data from {addr}: {data.decode()}', flush=True)
         self.queue.put_nowait((data, addr))
@@ -32,9 +32,9 @@ class UDP_ServerProtocol(asyncio.DatagramProtocol):
 class Uart_Protocol(asyncio.Protocol):
     def __init__(self, queue, queue_handshake):
         """
-        Constructor method for the Uart_Protocol class.
-        Initializes the queue and queue_handshake instance variables.
-        Sets the handshake instance variable to False.
+        Constructor:
+        Initializes the queue and queue_handshake variables (here: queues).
+        Sets the handshake variable to False.
         """
         self.queue = queue
         self.queue_handshake = queue_handshake
@@ -51,10 +51,10 @@ class Uart_Protocol(asyncio.Protocol):
     # further processing
     def data_received(self, data):
         """
-        Method called when UART data is received.
-        If the handshake is already done, decodes the data and puts it into the 
-        instance's queue. If the received data is the handshake, sets the handshake 
-        instance variable to True and puts a message in the instance's queue_handshake.
+        This method is called when UART data is received.
+        If the handshake is already done, decodes the data and puts it into 
+        dataqueue. If the received data is the handshake (0xAA), sets the handshake 
+        variable to True and puts a message into queue_handshake.
         """
         #decoded_data = data.decode(encoding='utf-8')
         # print(f'Received data from UART port: {data}', flush=True)

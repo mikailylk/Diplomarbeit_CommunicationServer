@@ -3,7 +3,7 @@ import json
 
 class CommData:
     """
-    A class to represent communication data and to convert it to an ICU protocol.
+    A class to represent communication data as object and to convert into ICU protocol.
     """
     def __init__(self, Pitch, Roll, Yaw, Power, PitchG, RollG, YawG):
         """

@@ -5,13 +5,14 @@ from threading import Thread, Event
 
 class BroadcastThread(Thread):
     """
-    A thread that broadcasts camera frames to a websocket server.
+    A Class that inherits from Thread and broadcasts camera frames to a 
+    websocket server.
     """
     
     def __init__(self, camera, output, websocket_server):
         """
-        Constructs a BroadcastThread instance (parameters are camera, streamoutput 
-        and websocket server)
+        Constructor: params are the camera object, streamoutput and a websocket 
+        server object
         """
         super(BroadcastThread, self).__init__()
         self.camera = camera

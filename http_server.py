@@ -17,14 +17,14 @@ class StreamingHttpHandler(BaseHTTPRequestHandler):
     
     def do_HEAD(self):
         """
-        Respond to HTTP HEAD requests.
+        This method responds to HTTP HEAD requests.
         """
         self.do_GET()
 
 
     def do_GET(self):
         """
-        Respond to HTTP GET requests.
+        This method responds to HTTP GET requests.
         """
         #Serve index.html
         if self.path == '/':
@@ -75,15 +75,15 @@ class StreamingHttpHandler(BaseHTTPRequestHandler):
 
 class StreamingHttpServer(HTTPServer):
     """
-    HTTP server for serving streaming video to a web client.
+    HTTP server for streaming video to a client.
     """
     
     def __init__(self):
         """
-        Constructor for the StreamingHttpServer class.
+        Constructor: 
         Initializes the HTTPServer class, sets the HTTP-PORT and 
-        StreamingHttpHandler handler, and reads and saves the index.html 
-        file into the instance's index_template variable.
+        StreamingHttpHandler handler. Then it reads and saves the index.html 
+        file into index_template variable.
         """
         super(StreamingHttpServer, self).__init__(
                     ('', config.HTTP_PORT), StreamingHttpHandler)
@@ -94,7 +94,8 @@ class StreamingHttpServer(HTTPServer):
 class StreamingWebSocket(WebSocket):
     def opened(self):
         """
-        Method called when socket is opened and to print when new clients are connected.
+        This method is called, when socket is opened. It also prints, when new clients 
+        are connected.
         """
         print("New client connected", flush=True)
         # you can override various WebSocket class methods
