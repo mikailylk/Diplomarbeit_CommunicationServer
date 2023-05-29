@@ -17,7 +17,7 @@ SMARTPHONE_PORT = 8088
 PICO_PORT = 8086        # information for smartphone; for Raspberry Pi not relevant
 WS_PORT = 8084          # default value is 8084
 
-VFLIP = False
-HFLIP = False
+VFLIP = True
+HFLIP = True
 
 ###########################################

@@ -23,7 +23,7 @@ class UDP_ServerProtocol(asyncio.DatagramProtocol):
         Method called when a datagram (UDP packet: JSON) is received.
         Puts the data and address into the given queue.
         """
-        # print(f'Received data from {addr}: {data.decode()}', flush=True)
+        print(f'Received data from {addr}: {data.decode()}', flush=True)
         self.queue.put_nowait((data, addr))
 #endregion
 
